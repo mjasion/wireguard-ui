@@ -44,7 +44,7 @@ RUN go mod download && \
 
 # Build
 RUN rice embed-go && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o wg-ui .
+    CGO_ENABLED=0 GOOS=linux go build -a -o wg-ui .
 
 # Release stage
 FROM alpine:3.11
