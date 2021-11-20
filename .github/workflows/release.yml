@@ -1,8 +1,6 @@
 name: wireguard-ui build release
 
-on:
-  release:
-    types: [created]
+on: [push]
 
 jobs:
   releases-matrix:
@@ -26,42 +24,53 @@ jobs:
     # get the source code
     - uses: actions/checkout@v2
 
-    # set environment
-    - name: Set APP_VERSION env
-      run: echo "APP_VERSION=$(echo ${GITHUB_REF} | rev | cut -d'/' -f 1 | rev )" >> $GITHUB_ENV
-    - name: Set BUILD_TIME env
-      run: echo "BUILD_TIME=$(date)" >> $GITHUB_ENV
-    - name: Environment Printer
-      uses: managedkaos/print-env@v1.0
+#     # set environment
+#     - name: Set APP_VERSION env
+#       run: echo "APP_VERSION=$(echo ${GITHUB_REF} | rev | cut -d'/' -f 1 | rev )" >> $GITHUB_ENV
+#     - name: Set BUILD_TIME env
+#       run: echo "BUILD_TIME=$(date)" >> $GITHUB_ENV
+#     - name: Environment Printer
+#       uses: managedkaos/print-env@v1.0
 
-    # setup node
-    - uses: actions/setup-node@v2
+#     # setup node
+#     - uses: actions/setup-node@v2
+#       with:
+#         node-version: '14'
+#         registry-url: 'https://registry.npmjs.org'
+
+#     # prepare assets for go rice
+#     - name: Prepare assets
+#       run: |
+#         chmod +x ./prepare_assets.sh
+#         ./prepare_assets.sh
+
+#     # get go rice tool
+#     - name: Get go rice tool
+#       run: go get github.com/GeertJohan/go.rice/rice
+
+#     # run go rice embed
+#     - name: Run go rice embed
+#       run: ${HOME}/go/bin/rice embed-go
+
+#     # build and make the releases
+#     - name: Build and make the releases
+#       uses: wangyoucao577/go-release-action@master
+#       with:
+#         github_token: ${{ secrets.GITHUB_TOKEN }}
+#         goos: ${{ matrix.goos }}
+#         goarch: ${{ matrix.goarch }}
+#         goversion: "https://dl.google.com/go/go1.16.1.linux-amd64.tar.gz"
+#         binary_name: "wireguard-ui"
+#         build_flags: -v
+#         ldflags: -X "main.appVersion=${{ env.APP_VERSION }}" -X "main.buildTime=${{ env.BUILD_TIME }}" -X main.gitCommit=${{ github.sha }} -X main.gitRef=${{ github.ref }}
+
+    - name: install buildx
+      id: buildx
+      uses: crazy-max/ghaction-docker-buildx@v1
       with:
-        node-version: '14'
-        registry-url: 'https://registry.npmjs.org'
-
-    # prepare assets for go rice
-    - name: Prepare assets
+        version: latest
+    - name: build the image
       run: |
-        chmod +x ./prepare_assets.sh
-        ./prepare_assets.sh
-
-    # get go rice tool
-    - name: Get go rice tool
-      run: go get github.com/GeertJohan/go.rice/rice
-
-    # run go rice embed
-    - name: Run go rice embed
-      run: ${HOME}/go/bin/rice embed-go
-
-    # build and make the releases
-    - name: Build and make the releases
-      uses: wangyoucao577/go-release-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: ${{ matrix.goos }}
-        goarch: ${{ matrix.goarch }}
-        goversion: "https://dl.google.com/go/go1.16.1.linux-amd64.tar.gz"
-        binary_name: "wireguard-ui"
-        build_flags: -v
-        ldflags: -X "main.appVersion=${{ env.APP_VERSION }}" -X "main.buildTime=${{ env.BUILD_TIME }}" -X main.gitCommit=${{ github.sha }} -X main.gitRef=${{ github.ref }}
+        docker buildx build \
+          --tag mjasion/wireguard-ui:latest \
+          --platform linux/amd64,linux/arm/v7,linux/arm64 .
